@@ -16,7 +16,8 @@ ARCHIVOS_REQUERIDOS = {
 }
 
 # --- Configuración para el Correo ---
-RECIPIENTS = ["gustavodulanto@donpollo.pe","galapi@donpollo.pe","karinamendoza@donpollo.pe","carolasantillan@donpollo.pe","cesarperez@donpollo.pe","willymontalvo@donpollo.pe"]
+#RECIPIENTS = ["gustavodulanto@donpollo.pe","galapi@donpollo.pe","karinamendoza@donpollo.pe","carolasantillan@donpollo.pe","cesarperez@donpollo.pe","willymontalvo@donpollo.pe"]
+RECIPIENTS = ["cesarestefano@donpollo.pe"]
 POWER_BI_LINK = "https://app.powerbi.com/reportEmbed?reportId=182453f0-248d-454c-bbd6-8565ba90e3aa&autoAuth=true&ctid=42fc96b3-c018-482d-8ada-cab81720489e"
 
 # --- Constantes para la lógica de reportes ---
