@@ -1,0 +1,10 @@
+Flask[async]==3.1.1
+gunicorn==23.0.0
+google-cloud-secret-manager==2.24.0
+google-cloud-storage
+pandas==2.2.2
+plotly==6.0.0
+sendgrid
+google-auth
+gspread # <-- ¡Añadido!
+kaleido # <-- ¡Añadido!
