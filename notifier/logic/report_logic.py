@@ -1,16 +1,14 @@
-# notifier/logic/report_logic.py
+# notifier/logic/report_logic.py (VERSIÓN FINAL CORREGIDA)
 """
 Módulo dedicado exclusivamente a la lógica de negocio:
 Leer dataframes desde rutas de archivos y transformarlos para generar los reportes.
-No tiene conocimiento de la nube ni de cómo se obtienen los archivos.
 """
-
 import pandas as pd
 import numpy as np
 from datetime import datetime
 import calendar
 import gspread
-from google.oauth2.service_account import Credentials
+from google.auth import default # Usamos la autenticación por defecto del entorno
 import logging
 
 from notifier.config import MESES_DICT, ACCESOS_GSPREAD
@@ -26,15 +24,21 @@ def leer_excel(ruta, **kwargs):
         logging.error(f"Error al leer el archivo Excel {ruta}: {e}")
         raise
 
-# --- LÓGICA PARA GOOGLE SHEETS (STOCK) ---
-def get_df_from_gspread(form, key_path):
-    logging.info(f"Accediendo a Google Sheet para '{form}' usando la llave en {key_path}...")
+# --- LÓGICA PARA GOOGLE SHEETS (CORREGIDA) ---
+def get_df_from_gspread(form):
+    """
+    Se autentica con G-Sheets usando las credenciales automáticas del entorno
+    de Google Cloud y devuelve un DataFrame.
+    """
+    logging.info(f"Accediendo a Google Sheet para '{form}' usando credenciales del entorno...")
     try:
         scopes = ["https://www.googleapis.com/auth/spreadsheets"]
-        creds = Credentials.from_service_account_file(key_path, scopes=scopes)
+        creds, _ = default(scopes=scopes)
         client = gspread.authorize(creds)
+        
         SHEET_ID = ACCESOS_GSPREAD[form]["SHEET_ID"]
         spreadsheet = client.open_by_key(SHEET_ID)
+        
         data_formulario = spreadsheet.sheet1.get_all_values()
         headers = data_formulario[0]
         df = pd.DataFrame(data_formulario[1:], columns=headers)
@@ -43,6 +47,7 @@ def get_df_from_gspread(form, key_path):
     except Exception as e:
         logging.error(f"No se pudo conectar o leer desde Google Sheets. Error: {e}")
         raise
+
 
 def generar_resumen_stock(df):
     df['Fecha'] = pd.to_datetime(df['Fecha'], dayfirst=True, errors='coerce')
@@ -229,15 +234,24 @@ def generar_reporte_diario_categoria_formateado(rutas_locales):
     return formatear_tabla_categoria(df_final)
 
 def generar_reporte_diario_und_pollos(rutas_locales):
-    df_movimientos = get_df_from_gspread('form_mov_pollos', rutas_locales['key_gspread'])
+    # ¡CORRECCIÓN! Ahora llama a la función correcta 'get_df_from_gspread'
+    # que usa la autenticación automática y ya no necesita la ruta al archivo .json
+    df_movimientos = get_df_from_gspread('form_mov_pollos')
+    
     df_resumen = generar_resumen_stock(df_movimientos)
     df_resumen['Fecha'] = pd.to_datetime(df_resumen['Fecha'], dayfirst=True)
     df_ventas_bd = generar_bd_ventas_formateada(rutas_locales)
     df_ventas_bd['fecha'] = pd.to_datetime(df_ventas_bd['fecha'], dayfirst=True)
     last_date = df_ventas_bd['fecha'].max()
     df_resumen_filtrado = df_resumen[df_resumen['Fecha'] == last_date].copy()
+    
+    if df_resumen_filtrado.empty:
+        logging.warning("No se encontraron datos de stock para la última fecha de venta.")
+        return pd.DataFrame(), "0 UND"
+
     df_resumen_filtrado['Fecha'] = df_resumen_filtrado['Fecha'].dt.strftime("%d/%m/%Y")
     df_ventas_bd['fecha_str'] = df_ventas_bd['fecha'].dt.strftime("%d/%m/%Y")
+    
     df_merged = df_resumen_filtrado.merge(
         df_ventas_bd[['fecha_str', 'nombre_producto', 'Hora_HHMM']],
         left_on=['Fecha', 'Producto'], right_on=['fecha_str', 'nombre_producto'], how='left'
@@ -247,6 +261,7 @@ def generar_reporte_diario_und_pollos(rutas_locales):
     comentario_und_pollos = f"{und_vendidas_pollos:,.0f} UND"
     df_final = df_merged[['Fecha', 'Producto', 'Stock Inicial', 'Ingresos', 'Ventas', 'Stock Final', 'Hora_HHMM']].rename(columns={'Hora_HHMM': 'Última Compra (hh:mm)'})
     return df_final, comentario_und_pollos
+
 
 def generar_comentarios_producto(rutas_locales):
     df_categoria_formateado = generar_reporte_diario_categoria_formateado(rutas_locales)

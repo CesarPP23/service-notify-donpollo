@@ -2,7 +2,7 @@
 
 # --- Configuración Estática del Proyecto ---
 PROJECT_ID = "dogwood-vision-459716-k3"
-BUCKET_NAME = "bucket-donpollo-reportes-dogwood" #nombre del bucket de Google Cloud Storage (GCS) donde estarán los archivos excel
+BUCKET_NAME = "bucket-donpollo-reportes-micasero" #nombre del bucket de Google Cloud Storage (GCS) donde estarán los archivos excel
 SENDER_EMAIL_SECRET_ID = "SENDER_EMAIL"  # El ID del secreto para el email remitente
 SENDGRID_API_KEY_SECRET_ID = "SENDGRID_API_KEY" # El ID del secreto para la clave de SendGrid
 
@@ -12,12 +12,12 @@ ARCHIVOS_REQUERIDOS = {
     "ventas": "Comprobantes mi casero.xlsx",
     "nc": "NC mi casero.xlsx",
     "presupuesto": "Consolidado.xlsx",
-    "key_gspread": "key_mi_casero.json" # La llave para Google Sheets
+    # "key_gspread": "key_mi_casero.json" # La llave para Google Sheets
 }
 
 # --- Configuración para el Correo ---
 #RECIPIENTS = ["gustavodulanto@donpollo.pe","galapi@donpollo.pe","karinamendoza@donpollo.pe","carolasantillan@donpollo.pe","cesarperez@donpollo.pe","willymontalvo@donpollo.pe"]
-RECIPIENTS = ["cesarestefano@donpollo.pe"]
+RECIPIENTS = ["cesarperez@donpollo.pe"]
 POWER_BI_LINK = "https://app.powerbi.com/reportEmbed?reportId=182453f0-248d-454c-bbd6-8565ba90e3aa&autoAuth=true&ctid=42fc96b3-c018-482d-8ada-cab81720489e"
 
 # --- Constantes para la lógica de reportes ---

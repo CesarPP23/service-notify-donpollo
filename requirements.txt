@@ -8,3 +8,4 @@ sendgrid
 google-auth
 gspread # <-- ¡Añadido!
 kaleido # <-- ¡Añadido!
+openpyxl==3.1.2
