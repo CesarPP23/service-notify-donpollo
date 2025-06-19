@@ -1,7 +1,7 @@
 # notifier/config.py
 
 # --- Configuración Estática del Proyecto ---
-PROJECT_ID = "dogwood-vision-459716-k3"
+PROJECT_ID = ""
 BUCKET_NAME = "bucket-donpollo-reportes-micasero" #nombre del bucket de Google Cloud Storage (GCS) donde estarán los archivos excel
 SENDER_EMAIL_SECRET_ID = "SENDER_EMAIL"  # El ID del secreto para el email remitente
 SENDGRID_API_KEY_SECRET_ID = "SENDGRID_API_KEY" # El ID del secreto para la clave de SendGrid
@@ -16,9 +16,8 @@ ARCHIVOS_REQUERIDOS = {
 }
 
 # --- Configuración para el Correo ---
-#RECIPIENTS = ["gustavodulanto@donpollo.pe","galapi@donpollo.pe","karinamendoza@donpollo.pe","carolasantillan@donpollo.pe","cesarperez@donpollo.pe","willymontalvo@donpollo.pe"]
-RECIPIENTS = ["cesarperez@donpollo.pe"]
-POWER_BI_LINK = "https://app.powerbi.com/reportEmbed?reportId=182453f0-248d-454c-bbd6-8565ba90e3aa&autoAuth=true&ctid=42fc96b3-c018-482d-8ada-cab81720489e"
+RECIPIENTS = ["klkl@klkl.pe"]
+POWER_BI_LINK = ""
 
 # --- Constantes para la lógica de reportes ---
 MESES_DICT = {
@@ -28,7 +27,7 @@ MESES_DICT = {
 
 ACCESOS_GSPREAD = {
     'form_mov_pollos': {
-        'SHEET_ID': '1wcr9GCUxyJauvq7XDHFpyHdwDOyOpU1s0r588BCISJE',
-        'GID': '1079445643'
+        'SHEET_ID': '',
+        'GID': ''
     }
 }
