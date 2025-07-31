@@ -8,6 +8,9 @@ import base64
 import plotly.graph_objects as go
 import io
 import logging
+from datetime import datetime
+import os
+import tempfile
 
 # --- FUNCIONES PRIVADAS (AYUDANTES INTERNOS DEL MÓDULO) ---
 
@@ -117,6 +120,40 @@ def _generar_imagen_base64(fig):
     logging.info("Imagen base64 generada.")
     return img_base64
 
+def _save_base64_image_to_temp(img_base64, filename_prefix="grafico_ventas"):
+    """
+    Guarda una imagen base64 en el directorio temporal de Cloud Run
+    
+    Args:
+        img_base64 (str): String base64 de la imagen
+        filename_prefix (str): Prefijo para el nombre del archivo
+    
+    Returns:
+        str: Ruta completa del archivo guardado
+    """
+    try:
+        # Decodificar base64
+        img_data = base64.b64decode(img_base64)
+        
+        # Crear nombre único para el archivo
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
+        filename = f"{filename_prefix}_{timestamp}.png"
+        
+        # Obtener directorio temporal (Cloud Run usa /tmp)
+        temp_dir = tempfile.gettempdir()  # En Cloud Run esto será /tmp
+        file_path = os.path.join(temp_dir, filename)
+        
+        # Guardar archivo
+        with open(file_path, 'wb') as f:
+            f.write(img_data)
+        
+        logging.info(f"Imagen guardada en: {file_path}")
+        return file_path
+        
+    except Exception as e:
+        logging.error(f"Error al guardar imagen en temp: {str(e)}")
+        raise e
+
 # --- FUNCIÓN PÚBLICA (LA ÚNICA QUE SE LLAMA DESDE FUERA) ---
 
 def crear_grafico_real_vs_ppto_base64(df_reporte_semanal):
@@ -138,3 +175,22 @@ def crear_grafico_real_vs_ppto_base64(df_reporte_semanal):
     figura = _generar_figura_plotly(df_procesado)
     imagen_base64 = _generar_imagen_base64(figura)
     return imagen_base64
+
+def crear_grafico_y_guardar_en_temp(df_reporte_semanal, filename_prefix="grafico_ventas"):
+    """
+    Crea el gráfico y lo guarda en el directorio temporal de Cloud Run.
+    Args:
+        df_reporte_semanal (pd.DataFrame): El DataFrame del reporte semanal
+        filename_prefix (str): Prefijo para el nombre del archivo
+    Returns:
+        str: ruta_archivo_temp
+    """
+    if df_reporte_semanal.empty:
+        logging.warning("El DataFrame para el gráfico está vacío. No se generará ninguna imagen.")
+        return None
+
+    df_procesado = _procesar_datos_para_grafico(df_reporte_semanal)
+    figura = _generar_figura_plotly(df_procesado)
+    imagen_base64 = _generar_imagen_base64(figura)
+    ruta_temp = _save_base64_image_to_temp(imagen_base64, filename_prefix)
+    return ruta_temp

@@ -80,8 +80,9 @@ def procesar_y_notificar():
         # 3. Generar la imagen del gráfico usando la lógica de gráficos
         logging.info("Generando gráfico desde graphics_logic...")
         df_semanal_para_grafico = report_logic.generar_reporte_semanal_ventas_vs_ppto(rutas_locales)
+        
         # La siguiente función hace todo: procesa, genera la figura y la convierte a base64
-        img_base64 = graphics_logic.crear_grafico_real_vs_ppto_base64(df_semanal_para_grafico)
+        img_temp_path = graphics_logic.crear_grafico_y_guardar_en_temp(df_semanal_para_grafico)
 
         # 4. Construir el cuerpo del correo en HTML con todos los datos
         logging.info("Construyendo cuerpo del correo HTML...")
@@ -114,7 +115,7 @@ def procesar_y_notificar():
         fecha_hoy = datetime.now().strftime("%d/%m/%Y")
         asunto = f"Reporte Diario de Ventas Mi casero - {fecha_hoy}"
         
-        email_service.enviar_reporte(asunto, cuerpo_html, img_base64)
+        email_service.enviar_reporte(asunto, cuerpo_html, img_temp_path)
         
         logging.info("Proceso completado exitosamente.")
         return "Proceso completado exitosamente.", 200

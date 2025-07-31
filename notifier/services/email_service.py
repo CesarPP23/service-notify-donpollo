@@ -1,56 +1,88 @@
-# notifier/services/email_service.py (VERSIÓN CON MANEJO DE ERROR ROBUSTO)
-
 import logging
 import base64
+import os
+import json
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from email.mime.image import MIMEImage
 from google.cloud import secretmanager
-from sendgrid import SendGridAPIClient
-from sendgrid.helpers.mail import Mail, Attachment, FileContent, FileName, FileType, Disposition
-from notifier.config import PROJECT_ID, SENDER_EMAIL_SECRET_ID, SENDGRID_API_KEY_SECRET_ID, RECIPIENTS
+from googleapiclient.discovery import build
+from google.auth.transport.requests import Request
+from google.oauth2.credentials import Credentials
+from notifier.config import PROJECT_ID, RECIPIENTS, SENDER_EMAIL_SECRET_ID,GET_GMAIL_CREDENTIALS_SECRET_ID
 
-def get_secret(secret_id, version_id="latest"):
+SCOPES = ['https://www.googleapis.com/auth/gmail.send']
+
+def _get_secret(secret_id, version_id="latest"):
     client = secretmanager.SecretManagerServiceClient()
     name = f"projects/{PROJECT_ID}/secrets/{secret_id}/versions/{version_id}"
     response = client.access_secret_version(request={"name": name})
     return response.payload.data.decode("UTF-8")
 
-def enviar_reporte(subject, html_content, image_base64=None):
+def _get_gmail_credentials_from_secret(project_id, secret_id):
+    client = secretmanager.SecretManagerServiceClient()
+    name = f"projects/{project_id}/secrets/{secret_id}/versions/latest"
+    response = client.access_secret_version(request={"name": name})
+    secret = json.loads(response.payload.data.decode("UTF-8"))
+    creds = Credentials(
+        None,
+        refresh_token=secret["refresh_token"],
+        token_uri="https://oauth2.googleapis.com/token",
+        client_id=secret["client_id"],
+        client_secret=secret["client_secret"],
+        scopes=SCOPES
+    )
+    if creds.expired or not creds.valid:
+        creds.refresh(Request())
+    return creds
+
+def enviar_reporte(subject, html_content, image_path=None):
     """
-    Construye y envía el correo usando SendGrid.
+    Construye y envía el correo usando Gmail API y OAuth2.
+    Args:
+        subject (str): Asunto del correo
+        html_content (str): Contenido HTML del correo
+        image_path (str): Ruta del archivo de imagen en /tmp (opcional)
     """
-    logging.info("Preparando correo para enviar con SendGrid...")
+    logging.info("Preparando correo para enviar con Gmail API (OAuth2)...")
     try:
-        api_key = get_secret(SENDGRID_API_KEY_SECRET_ID)
-        from_email = get_secret(SENDER_EMAIL_SECRET_ID)
+        from_email = _get_secret(SENDER_EMAIL_SECRET_ID)
+        creds = _get_gmail_credentials_from_secret(PROJECT_ID, GET_GMAIL_CREDENTIALS_SECRET_ID)
+        service = build('gmail', 'v1', credentials=creds)
 
-        message = Mail(
-            from_email=from_email,
-            to_emails=RECIPIENTS,
-            subject=subject,
-            html_content=html_content
-        )
+        # Construir el mensaje MIME
+        message = MIMEMultipart('related')
+        message['to'] = ', '.join(RECIPIENTS)
+        message['from'] = from_email
+        message['subject'] = subject
 
-        if image_base64:
-            attached_image = Attachment(
-                FileContent(image_base64),
-                FileName('grafico_ventas.png'),
-                FileType('image/png'),
-                Disposition('inline'),
-                content_id='grafico_semanal'
-            )
-            message.attachment = attached_image
+        msg_alternative = MIMEMultipart('alternative')
+        message.attach(msg_alternative)
+        html_part = MIMEText(html_content, 'html', 'utf-8')
+        msg_alternative.attach(html_part)
 
-        sg = SendGridAPIClient(api_key)
-        response = sg.send(message)
-        logging.info(f"Correo enviado exitosamente. Código de estado: {response.status_code}")
+        if image_path and os.path.exists(image_path):
+            logging.info(f"Adjuntando imagen desde: {image_path}")
+            with open(image_path, 'rb') as f:
+                img_data = f.read()
+            image = MIMEImage(img_data)
+            image.add_header('Content-ID', '<grafico_semanal>')
+            image.add_header('Content-Disposition', 'inline', filename='grafico_ventas.png')
+            message.attach(image)
+            logging.info("Imagen adjuntada correctamente al correo")
+        elif image_path:
+            logging.warning(f"Ruta de imagen especificada pero archivo no encontrado: {image_path}")
+
+        raw_message = base64.urlsafe_b64encode(message.as_bytes()).decode('utf-8')
+        body = {'raw': raw_message}
+
+        result = service.users().messages().send(userId='me', body=body).execute()
+        logging.info(f"Correo enviado exitosamente. Message ID: {result['id']}")
         return True
 
     except Exception as e:
-        # --- ¡NUEVO MANEJO DE ERROR A PRUEBA DE FALLOS! ---
-        # Imprimimos el tipo de error y su mensaje de forma segura.
-        # Esto nos dará la información exacta sin importar el tipo de error.
-        logging.error("CRÍTICO: Falló el envío de correo.")
+        logging.error("CRÍTICO: Falló el envío de correo con Gmail API (OAuth2).")
         logging.error(f"Tipo de Error: {type(e)}")
         logging.error(f"Mensaje del Error: {str(e)}")
-        # El exc_info=True nos dará el traceback completo para más contexto.
         logging.error("Traceback completo:", exc_info=True)
         return False

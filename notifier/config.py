@@ -4,8 +4,8 @@
 PROJECT_ID = "dogwood-vision-459716-k3"
 BUCKET_NAME = "bucket-donpollo-reportes-micasero" #nombre del bucket de Google Cloud Storage (GCS) donde estarán los archivos excel
 SENDER_EMAIL_SECRET_ID = "SENDER_EMAIL"  # El ID del secreto para el email remitente
-SENDGRID_API_KEY_SECRET_ID = "SENDGRID_API_KEY" # El ID del secreto para la clave de SendGrid
-
+#SENDGRID_API_KEY_SECRET_ID = "SENDGRID_API_KEY" # El ID del secreto para la clave de SendGrid
+GET_GMAIL_CREDENTIALS_SECRET_ID = "gmail-oauth-credentials"  # El ID del secreto para las credenciales de Gmail OAuth2
 # Lista de archivos que el bot necesita para trabajar
 # Estos son los nombres de los archivos como están en el bucket de GCS
 ARCHIVOS_REQUERIDOS = {
