@@ -88,8 +88,8 @@ def construir_cuerpo_email(tabla_unidades_html, tabla_ventas_x_categoria_html, t
 
 def main():
     main_loger()
-    # fecha = datetime.now().strftime('%d/%m/%Y')
-    fecha = '01/08/2025'
+    fecha = datetime.now().strftime('%d/%m/%Y')
+    # fecha = '01/08/2025'
     
     # 1. Obtener todos los dataframes
     (df_semanal_vs_ppto, df_ventas_x_sku, df_ventas_x_categoria, df_ventas_x_diasem, df_ventas_unidades_google) = obtener_dataframes(fecha)
