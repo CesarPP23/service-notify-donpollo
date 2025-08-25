@@ -1,0 +1,4 @@
+.venv
+.json
+**/credentials.json
+reporte_ventas_semanal
